@@ -1,19 +1,24 @@
 import cv2
 import numpy as np
 
-def remove_black_lines_mode(img_path, threshold=50):
+def remove_black_lines_mode(img_path, threshold=150):
     """
     Removes black/noise lines from CAPTCHA images by replacing dark pixels
     with the mode of their 8 non-black neighboring pixels.
     If all neighbors are black, use global median color as fallback.
     """
+
     img = cv2.imread(img_path)
     if img is None:
         raise ValueError(f"Cannot read image: {img_path}")
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-    # Identify black pixels
-    mask = np.all(img < threshold, axis=2)
+    # Dynamically determine the darkest pixel value in the image
+    darkest_pixel = np.min(img)
+    dynamic_threshold = darkest_pixel + 10  # Add small buffer to include near-black
+
+    # Identify black pixels using dynamic threshold
+    mask = np.all(img < dynamic_threshold, axis=2)
     padded = np.pad(img, ((1, 1), (1, 1), (0, 0)), mode='reflect')
 
     # Precompute a global fallback color (median of all non-black pixels)
@@ -31,8 +36,8 @@ def remove_black_lines_mode(img_path, threshold=50):
         neighbors = np.delete(neighbors, 4, axis=0)
 
         # Filter out dark (black) neighbors
-        bright_neighbors = np.array([c for c in neighbors if not np.all(c < threshold)])
-        
+        bright_neighbors = np.array([c for c in neighbors if not np.all(c < dynamic_threshold)])
+
         # If no bright neighbors, use global median color
         if len(bright_neighbors) == 0:
             img[y, x] = global_median_color
@@ -49,6 +54,6 @@ def remove_black_lines_mode(img_path, threshold=50):
 
 # Example usage
 if __name__ == "__main__":
-    cleaned = remove_black_lines_mode("0abe-0.png")
+    cleaned = remove_black_lines_mode("data/train/0t9qpv-0.png")
     cv2.imwrite("captcha_cleaned_mode.png", cleaned)
     print("Saved cleaned image to captcha_cleaned_mode.png")
