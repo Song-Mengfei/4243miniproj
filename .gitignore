@@ -1,1 +1,3 @@
-/data
+/processed
+/processed_kmeans_output
+/my_test_output
