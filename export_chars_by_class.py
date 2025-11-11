@@ -21,7 +21,8 @@ from pathlib import Path
 import shutil
 import csv
 import time
-from improved_segmentation import segment_captcha
+import cv2
+from segmentation_v2 import segment_characters
 
 DEFAULT_OUT = 'chars_by_class'
 STAGING_DIR = '_staging_chars'
@@ -58,14 +59,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--dir', type=str, default='.', help='Input directory with CAPTCHA images')
     parser.add_argument('-o', '--out', type=str, default=DEFAULT_OUT, help='Output root for class folders')
-    parser.add_argument('-m', '--method', type=str, default='color_kmeans', help='Segmentation method to use')
-    parser.add_argument('--keep-staging', action='store_true', help='Keep staging crops instead of deleting')
+    parser.add_argument('--spatial-weight-x', type=float, default=1.5, help='Spatial weight for x-coordinate')
+    parser.add_argument('--spatial-weight-y', type=float, default=0.4, help='Spatial weight for y-coordinate')
+    parser.add_argument('--contour-weight', type=float, default=100, help='Weight for contour penalty')
+    parser.add_argument('--min-pixels', type=int, default=3, help='Minimum pixels for component')
+    parser.add_argument('--top-components', type=int, default=5, help='Number of top components to keep')
     args = parser.parse_args()
 
     input_dir = Path(args.dir)
     out_root = Path(args.out)
-    staging_root = Path(STAGING_DIR)
-    staging_root.mkdir(exist_ok=True)
     out_root.mkdir(exist_ok=True)
 
     images = find_images(input_dir)
@@ -81,18 +83,17 @@ def main():
 
         start = time.time()
         try:
-            # Stage crops (this returns paths in left-to-right order)
-            staged_dir = staging_root / img.stem
-            staged_dir.mkdir(exist_ok=True)
-            saved_paths = segment_captcha(
+            # Segment characters using segmentation_v2 method
+            char_images, char_labels = segment_characters(
                 str(img),
-                method=args.method,
-                expected_chars=expected,
-                output_dir=str(staged_dir),
-                visualize=False,
+                min_pixels=args.min_pixels,
+                top_components=args.top_components,
+                spatial_weight_x=args.spatial_weight_x,
+                spatial_weight_y=args.spatial_weight_y,
+                contour_weight=args.contour_weight
             )
             elapsed = time.time() - start
-            found = len(saved_paths)
+            found = len(char_images)
 
             # Align to label and export
             status = 'OK'
@@ -104,24 +105,19 @@ def main():
                 correct += 1
 
             if label and found == expected:
-                for i, crop_path in enumerate(saved_paths):
+                for i, char_img in enumerate(char_images):
                     c = label[i]
                     group = group_of_char(c)
                     dest_dir = out_root / group / c
                     dest_dir.mkdir(parents=True, exist_ok=True)
                     dest_name = f"{img.stem}_char{i}.png"
-                    shutil.copy2(crop_path, dest_dir / dest_name)
+                    dest_path = dest_dir / dest_name
+                    cv2.imwrite(str(dest_path), char_img)
 
             summary.append([
                 str(img), label if label else '', expected if expected is not None else '',
                 found, f"{elapsed:.3f}", status
             ])
-
-            if not args.keep_staging:
-                try:
-                    shutil.rmtree(staged_dir)
-                except Exception:
-                    pass
 
             print(f"[DONE] {img.name}: expected={expected} found={found} -> {status}")
         except Exception as e:
