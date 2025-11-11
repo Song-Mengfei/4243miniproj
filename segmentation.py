@@ -4,6 +4,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 
+# Please check v2, which includes spatial and contour features for better segmentation.
 
 def get_dominant_clusters(image, n_clusters, threshold):
     """
