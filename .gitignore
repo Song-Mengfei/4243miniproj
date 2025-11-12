@@ -2,3 +2,5 @@
 /processed_kmeans_output
 /my_test_output
 /chars_by_class
+/cgan_ckpt
+/cgan_ckpt_stable
