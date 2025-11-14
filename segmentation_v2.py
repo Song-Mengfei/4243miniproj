@@ -66,7 +66,7 @@ def segment_characters(image_path, min_pixels=3, top_components=5,
     filename = Path(image_path).stem
     chars_part = filename.split("-")[0]
     n_clusters = len(chars_part) + 1
-    print(f"[INFO] Detected {len(chars_part)} characters — using {n_clusters} KMeans clusters.")
+
 
     image = cv2.imread(image_path)
     if image is None:
@@ -162,7 +162,6 @@ def segment_characters(image_path, min_pixels=3, top_components=5,
     # --- Step 2: Identify smallest cluster (deleted one) ---
     min_idx = int(np.argmin(cluster_pixel_counts))
     min_pixels_count = cluster_pixel_counts[min_idx]
-    print(f"[INFO] Cluster {min_idx} marked as deleted (fewest pixels: {min_pixels_count}).")
 
     # --- Step 3: Sort clusters left-to-right ---
     sorted_indices = np.argsort(cluster_x_positions)
@@ -210,7 +209,6 @@ def segment_and_save_characters(image_path, min_pixels=3, top_components=5,
     filename = Path(image_path).stem
     chars_part = filename.split("-")[0]
     n_clusters = len(chars_part) + 1
-    print(f"[INFO] Detected {len(chars_part)} characters — using {n_clusters} KMeans clusters.")
 
     image = cv2.imread(image_path)
     if image is None:
@@ -265,7 +263,6 @@ def segment_and_save_characters(image_path, min_pixels=3, top_components=5,
         debug_img[mask == 255] = image[mask == 255]
         debug_save_path = output_dir / f"debug_char_{i}.png"
         cv2.imwrite(debug_save_path, debug_img)
-        print(f"[DEBUG SAVED] {debug_save_path}")
 
         # --- Clean cluster ---
         num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, connectivity=8)
@@ -314,7 +311,6 @@ def segment_and_save_characters(image_path, min_pixels=3, top_components=5,
     # --- Step 2: Identify smallest cluster (deleted one) ---
     min_idx = int(np.argmin(cluster_pixel_counts))
     min_pixels_count = cluster_pixel_counts[min_idx]
-    print(f"[INFO] Cluster {min_idx} marked as deleted (fewest pixels: {min_pixels_count}).")
 
     # --- Step 3: Sort clusters left-to-right ---
     sorted_indices = np.argsort(cluster_x_positions)
