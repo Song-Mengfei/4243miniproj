@@ -4,3 +4,6 @@
 /chars_by_class
 /cgan_ckpt
 /cgan_ckpt_stable
+/data
+/wgan_training
+.idea
