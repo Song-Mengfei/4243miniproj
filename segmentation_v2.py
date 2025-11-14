@@ -355,8 +355,8 @@ def segment_and_save_characters(image_path, min_pixels=3, top_components=5,
 
 
 def main():
-    image_path = "03yuav5-0.png"
-    segment_and_save_characters(image_path, spatial_weight_x=1.5, spatial_weight_y=0.4, contour_weight=100)
+    image_path = "2uba9hkt-0.png"
+    segment_and_save_characters(image_path, spatial_weight_x=4.003, spatial_weight_y=0.449, contour_weight=238.313)
 
 
 if __name__ == "__main__":

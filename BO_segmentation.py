@@ -9,7 +9,7 @@ character-level accuracy.
 Usage:
     python BO_segmentation.py
     python BO_segmentation.py --model best_char_recognition_model.pth
-    python BO_segmentation.py --data processed/test --output bo_search_results.csv
+    python BO_segmentation.py --data processed/train --output bo_search_results.csv
 """
 
 # =============================================================================
@@ -26,7 +26,6 @@ import cv2
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from tqdm import tqdm
 import pandas as pd
 from skopt import gp_minimize
@@ -38,6 +37,16 @@ warnings.filterwarnings("ignore")
 
 # Import your segmentation function
 from segmentation_v2 import get_dominant_clusters
+
+# =============================================================================
+# Bootstrap Sampling
+# =============================================================================
+def bootstrap_sample(img_paths, n_samples=2000, random_state=42):
+    rng = np.random.default_rng(random_state)
+    if len(img_paths) <= n_samples:
+        return img_paths.copy()
+    indices = rng.choice(len(img_paths), size=n_samples, replace=True)
+    return [img_paths[i] for i in indices]
 
 # =============================================================================
 # Model Definition
@@ -281,8 +290,12 @@ def bayesian_optimize(model, img_paths, device, output_csv):
     def objective(spatial_weight_x, spatial_weight_y, contour_weight):
         call_counter['n'] += 1
         print(f"\n[Step {call_counter['n']}/30] Testing params: swx={spatial_weight_x:.2f}, swy={spatial_weight_y:.2f}, cw={contour_weight:.1f}")
+
+        # Bootstrap sample 2000 images for evaluation
+        sampled_paths = bootstrap_sample(img_paths, n_samples=2000)
         seq_acc, char_acc, total = evaluate_with_params(
-            model, img_paths, device, spatial_weight_x, spatial_weight_y, contour_weight)
+            model, sampled_paths, device, spatial_weight_x, spatial_weight_y, contour_weight)
+
         results.append({
             'spatial_weight_x': spatial_weight_x,
             'spatial_weight_y': spatial_weight_y,
@@ -310,7 +323,7 @@ def bayesian_optimize(model, img_paths, device, output_csv):
 def main():
     parser = argparse.ArgumentParser(description='Bayesian optimization for segmentation hyperparameters')
     parser.add_argument('--model', type=str, default='best_char_recognition_model.pth')
-    parser.add_argument('--data', type=str, default='processed/test')
+    parser.add_argument('--data', type=str, default='processed/train')
     parser.add_argument('--output', type=str, default='bo_search_results.csv')
     args = parser.parse_args()
 
@@ -334,4 +347,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
