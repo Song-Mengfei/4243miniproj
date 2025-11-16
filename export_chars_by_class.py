@@ -22,7 +22,7 @@ import shutil
 import csv
 import time
 import cv2
-from segmentation_v2 import segment_characters
+from segmentation import segment_characters
 
 DEFAULT_OUT = 'chars_by_class'
 STAGING_DIR = '_staging_chars'

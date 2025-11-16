@@ -40,7 +40,7 @@ from skopt.utils import use_named_args
 
 warnings.filterwarnings("ignore")
 
-from segmentation_v2 import get_dominant_clusters
+from segmentation import get_dominant_clusters
 
 
 # =============================================================================
